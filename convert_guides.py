@@ -74,7 +74,7 @@ def grab_guide_urls():
 
 def download_doc(guide):
     url = "https://docs.google.com/document/d/{}/export?format=doc".format(guide["id"])
-    file_path = "docx/{}.docx".format(guide["name"])
+    file_path = os.path.join("docx", "{}.docx".format(guide["name"]))
 
     if not os.path.exists(file_path):
         print("Downloading {}...".format(file_path))
@@ -85,10 +85,10 @@ def download_doc(guide):
 
 
 def convert_to_md(guide):
-    docx = "docx/{}.docx".format(guide["name"])
+    docx = os.path.join("docx", "{}.docx".format(guide["name"]))
     assert os.path.exists(docx)
 
-    md = "markdown/{}.md".format(guide["name"])
+    md = os.path.join("markdown", "{}.md".format(guide["name"]))
     if not os.path.exists(md):
         print("Creating {}...".format(md))
         bashCommand = "pandoc {} -o {}".format(docx, md)
