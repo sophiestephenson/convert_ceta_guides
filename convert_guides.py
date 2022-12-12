@@ -6,11 +6,11 @@ import requests
 
 
 def setup():
-    print("Setting up required dirs...")
     required_dirs = ["docx", "markdown"]
 
     for dir in required_dirs:
         if not os.path.exists(dir):
+            print("Adding required directory {}...".format(dir))
             os.mkdir(dir)
 
 
@@ -99,7 +99,6 @@ def convert_all_guides():
     setup()
 
     guides = grab_guide_urls()
-    pprint(guides)
 
     for guide in guides:
         download_doc(guide)
