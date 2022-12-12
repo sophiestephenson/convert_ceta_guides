@@ -5,6 +5,7 @@ After making sure the md is accurate, we will put the .md guides on
 our [website](techclinic.cs.wisc.edu) and attribute CETA.
 
 To use:
+- Install [pandoc](https://pandoc.org/)
 - Download the [CETA guides dashboard](https://docs.google.com/spreadsheets/d/1JShWdURTLQAihi0cxaqo0stImRs14YQOp6j8fecrEbs/edit#gid=0) as `ceta_dashboard.csv`.
 - Run `python3 convert_guides.py`.
 - Manually check the guides - pandoc doesn't 100% capture everything in the docs.
