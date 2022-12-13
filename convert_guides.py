@@ -1,5 +1,6 @@
 import csv
 import os
+import subprocess
 from pprint import pprint
 
 import requests
@@ -38,19 +39,21 @@ def get_document_id_from_url(url):
             
 def grab_guide_urls():
     # go through ceta dashboard and get the in progress guides
-    assert os.path.exists("ceta_dashboard.csv")
+    if os.path.exists("ceta_dashboard.csv"):
+        guides = []
+        with open("ceta_dashboard.csv", "r") as f:
+            csvreader = csv.DictReader(f)
 
-    guides = []
+            for line in csvreader:
+                if line["Status"] in ["Posted in CETA website", "Final draft ready"]:
+                    guide_name = filenameify(line["Guide"])
+                    guide_id = get_document_id_from_url(line["Draft"])
+                    new_guide = {"name": guide_name, "id": guide_id}
+                    guides.append(new_guide)
 
-    with open("ceta_dashboard.csv", "r") as f:
-        csvreader = csv.DictReader(f)
-
-        for line in csvreader:
-            if line["Status"] in ["Posted in CETA website", "Final draft ready"]:
-                guide_name = filenameify(line["Guide"])
-                guide_id = get_document_id_from_url(line["Draft"])
-                new_guide = {"name": guide_name, "id": guide_id}
-                guides.append(new_guide)
+    else:
+        print("Please download CETA dashboard")
+        exit()
 
     # get a few other guides which I know exist but are new, so aren't in that CSV
     other_guides = [
@@ -86,13 +89,11 @@ def download_doc(guide):
 
 def convert_to_md(guide):
     docx = os.path.join("docx", "{}.docx".format(guide["name"]))
-    assert os.path.exists(docx)
-
     md = os.path.join("markdown", "{}.md".format(guide["name"]))
     if not os.path.exists(md):
         print("Creating {}...".format(md))
-        bashCommand = "pandoc {} -o {}".format(docx, md)
-        os.system(bashCommand)
+        bash_command = "pandoc {} -o {}".format(docx, md)
+        subprocess.check_call(bash_command.split())
 
 
 def convert_all_guides():
