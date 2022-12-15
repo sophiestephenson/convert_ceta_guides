@@ -1,18 +1,11 @@
+import argparse
 import csv
 import os
+import re
 import subprocess
 from pprint import pprint
 
 import requests
-
-
-def setup():
-    required_dirs = ["docx", "markdown"]
-
-    for dir in required_dirs:
-        if not os.path.exists(dir):
-            print("Adding required directory {}...".format(dir))
-            os.mkdir(dir)
 
 
 def filenameify(name):
@@ -75,39 +68,86 @@ def grab_guide_urls():
     return guides
 
 
-def download_doc(guide):
-    url = "https://docs.google.com/document/d/{}/export?format=doc".format(guide["id"])
-    file_path = os.path.join("docx", "{}.docx".format(guide["name"]))
+def download_doc(guide, filetype):
+    name = guide["name"]
+    id = guide["id"]
+
+    format_abbv = filetype
+    if filetype == "docx":
+        format_abbv = "doc"
+
+    if not os.path.exists(filetype):
+        print(f"Adding required directory {filetype}/...")
+        os.mkdir(filetype)
+
+
+    url = f"https://docs.google.com/document/d/{id}/export?format={format_abbv}"
+    file_path = os.path.join(filetype, f"{name}.{filetype}")
 
     if not os.path.exists(file_path):
-        print("Downloading {}...".format(file_path))
+        print(f"Downloading {file_path}...")
         r = requests.get(url)
         open(file_path, 'wb').write(r.content)  
 
         ## TO DO: check if the file downloaded right
 
 
-def convert_to_md(guide):
-    docx = os.path.join("docx", "{}.docx".format(guide["name"]))
-    md = os.path.join("markdown", "{}.md".format(guide["name"]))
+def convert_to_md(guide_name):
+    if not os.path.exists("markdown"):
+        print(f"Adding required directory markdown/...")
+        os.mkdir("markdown")
+
+    docx = os.path.join("docx", f"{guide_name}.docx")
+    md = os.path.join("markdown", f"{guide_name}.md")
     if not os.path.exists(md):
-        print("Creating {}...".format(md))
-        bash_command = "pandoc {} -o {}".format(docx, md)
+        print(f"Creating {md}...")
+        bash_command = f"pandoc {docx} -o {md}"
         subprocess.check_call(bash_command.split())
 
 
-def convert_all_guides():
-    setup()
+def tweak_html(guide_name):
+    # grab html file content
+    html_file = os.path.join("html", f"{guide_name}.html")
+    with open(html_file, 'r') as f:
+        file_content = f.read()
 
+    # replace heading colors with our website color
+    file_content = file_content.replace("#0000ff", "#9122e6")
+
+    # write the new content
+    with open(html_file, 'w') as f:
+        f.write(file_content)
+
+
+def convert_all_guides_to_md():
     guides = grab_guide_urls()
 
     for guide in guides:
-        download_doc(guide)
-        convert_to_md(guide)
+        download_doc(guide, filetype="docx")
+        convert_to_md(guide["name"])
+
+
+def download_all_guides_html():
+    guides = grab_guide_urls()
+
+    for guide in guides:
+        download_doc(guide, filetype="html")
+        tweak_html(guide["name"])
+
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-md', action='store_true')
+    parser.add_argument('-html', action='store_true')
 
-    convert_all_guides()
+    args = parser.parse_args()
+    if args.md:
+        convert_all_guides_to_md()
+    if args.html:
+        download_all_guides_html()
+
+    if not (args.md or args.html):
+        print("Please use the flags -md or -html to indicate what type of output you want.")
 
 
     
